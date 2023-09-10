@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"time"
 
-	"us.figge/guilib/graphics/fonts"
+	"github.com/jfigge/guilib/graphics/fonts"
 
 	"github.com/veandco/go-sdl2/sdl"
 )
