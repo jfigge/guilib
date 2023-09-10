@@ -43,6 +43,10 @@ func (b *BaseHandler) Quit() {
 func (b *BaseHandler) Init(canvas *Canvas) {
 }
 
+func (b *BaseHandler) Events(event sdl.Event) bool {
+	return false
+}
+
 func (b *BaseHandler) OnUpdate() {
 }
 

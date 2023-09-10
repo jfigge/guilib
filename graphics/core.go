@@ -77,20 +77,23 @@ func (c *Canvas) start() {
 	for c.state == running {
 		// Process window events
 		for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
-			c.lock.Lock()
-			processed := false
-			if c.handler != nil {
-				processed = c.handler.Events(event)
-			}
-			if !processed {
-				switch e := event.(type) {
-				case *sdl.QuitEvent:
-					fmt.Printf("Quit event: %+v\n", e)
-					c.Quit()
+			func() {
+				c.lock.Lock()
+				defer c.lock.Unlock()
+				processed := false
+				if c.handler != nil {
+					processed = c.handler.Events(event)
 				}
-			}
-			c.lock.Unlock()
+				if !processed {
+					switch e := event.(type) {
+					case *sdl.QuitEvent:
+						fmt.Printf("Quit event: %+v\n", e)
+						c.Quit()
+					}
+				}
+			}()
 		}
+		time.Sleep(time.Millisecond * 10)
 	}
 
 	fmt.Println("Destroying handlers")
@@ -122,16 +125,18 @@ func (c *Canvas) gameLoop() {
 				fmt.Println("game Loop - Done")
 				return
 			case <-c.frameRateTimer.C:
-				c.lock.Lock()
-				// Update state
-				c.handler.OnUpdate()
+				func() {
+					c.lock.Lock()
+					defer c.lock.Unlock()
+					// Update state
+					c.handler.OnUpdate()
 
-				// Handle draw canvas
-				c.handler.OnDraw(c.renderer)
+					// Handle draw canvas
+					c.handler.OnDraw(c.renderer)
 
-				// Render the image
-				c.renderer.Present()
-				c.lock.Unlock()
+					// Render the image
+					c.renderer.Present()
+				}()
 			}
 		}
 	}()

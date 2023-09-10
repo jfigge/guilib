@@ -1,4 +1,4 @@
-module us.figge/guilib
+module github.com/jfigge/guilib
 
 go 1.21
 
