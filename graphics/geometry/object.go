@@ -2,7 +2,7 @@
  * Copyright (C) 2023 by Jason Figge
  */
 
-package components
+package geometry
 
 import (
 	"bufio"
@@ -13,21 +13,17 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-
-	"github.com/jfigge/guilib/graphics/matrix"
 )
 
 type Object struct {
 	ts     []*Triangle
-	offset *vector.Vector
+	offset *Vector
 }
-
-const invertY = true
 
 func (o *Object) newInstance() *Object {
 	ts := make([]*Triangle, len(o.ts))
 	for i, t := range o.ts {
-		ts[i] = t.NewInstane()
+		ts[i] = t.NewInstance()
 	}
 	return &Object{
 		ts:     ts,
@@ -39,23 +35,22 @@ func (o *Object) Rotate(xDeg, yDeg, zDeg float64) *Object {
 	xRad := xDeg * math.Pi / 180
 	yRad := yDeg * math.Pi / 180
 	zRad := zDeg * math.Pi / 180
-	return o.newInstance().applyMatrix(matrix.RotateXYZ(xRad, yRad, zRad))
+	return o.newInstance().applyMatrix(RotateXYZ(xRad, yRad, zRad))
 }
 
 func (o *Object) Scale(x, y, z float64) *Object {
-	scale := matrix.ScaleXYZ(x, y, z)
-	return o.newInstance().applyMatrix(scale)
+	return o.newInstance().applyMatrix(ScaleXYZ(x, y, z))
 }
 
 func (o *Object) Translate(x, y, z float64) *Object {
 	o1 := o.newInstance()
-	o1.offset = &vector.Vector{x: x, y: y, z: z, w: 0}
+	o1.offset = &Vector{x: x, y: y, z: z, w: 0}
 	return o1
 }
 
-func (o *Object) Offset() *vector.Vector {
+func (o *Object) Offset() *Vector {
 	if o.offset == nil {
-		o.offset = &vector.Vector{x: 0, y: 0, z: 0, w: 0}
+		o.offset = &Vector{x: 0, y: 0, z: 0, w: 0}
 	}
 	return o.offset
 }
@@ -69,7 +64,7 @@ func (o *Object) Triangles() []*Triangle {
 	return o.ts
 }
 
-func (o *Object) applyMatrix(m *matrix.Matrix4X4) *Object {
+func (o *Object) applyMatrix(m *Matrix4X4) *Object {
 	for _, t := range o.ts {
 		t.applyMatrix(m)
 	}
@@ -100,11 +95,11 @@ func LoadObject(filename string) (*Object, error) {
 	defer file.Close()
 
 	scanner := bufio.NewScanner(file)
-	var pts []*vector.Vector
+	var pts []*Vector
 	var ts []*Triangle
 
 	lineCnt := 0
-	var pt *vector.Vector
+	var pt *Vector
 	var t *Triangle
 
 	// https://en.wikipedia.org/wiki/Wavefront_.obj_file#:~:text=The%20OBJ%20file%20format%20is,of%20vertices%2C%20and%20texture%20vertices.
@@ -163,7 +158,7 @@ func LoadObject(filename string) (*Object, error) {
 	}, nil
 }
 
-func parseVector(line string, lineCnt int) (*vector.Vector, error) {
+func parseVector(line string, lineCnt int) (*Vector, error) {
 	xyzw := strings.Split(strings.TrimSpace(line), " ")
 	if len(xyzw) < 3 {
 		return nil, fmt.Errorf("too few values in line %d: %s", lineCnt, line)
@@ -196,10 +191,10 @@ func parseVector(line string, lineCnt int) (*vector.Vector, error) {
 	} else {
 		w = 1
 	}
-	return &vector.Vector{x: x, y: y, z: z, w: w}, nil
+	return &Vector{x: x, y: y, z: z, w: w}, nil
 }
 
-func parseFace(pts []*vector.Vector, line string, lineCnt int) (*Triangle, error) {
+func parseFace(pts []*Vector, line string, lineCnt int) (*Triangle, error) {
 	xyz := strings.Split(strings.TrimSpace(line), " ")
 	if len(xyz) != 3 {
 		return nil, fmt.Errorf("bad face in line %d: %s", lineCnt, line)
@@ -223,8 +218,8 @@ func parseFace(pts []*vector.Vector, line string, lineCnt int) (*Triangle, error
 	}
 
 	return &Triangle{
-		vs:     [3]*vector.Vector{pts[i1-1], pts[i2-1], pts[i3-1]},
-		normal: &vector.Vector{0, 0, 0, 1},
+		vs:     [3]*Vector{pts[i1-1], pts[i2-1], pts[i3-1]},
+		normal: &Vector{0, 0, 0, 1},
 		color:  uint32(0xFFFFFFFF),
 	}, nil
 }

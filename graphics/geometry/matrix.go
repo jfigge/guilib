@@ -2,17 +2,15 @@
  * Copyright (C) 2023 by Jason Figge
  */
 
-package matrix
+package geometry
 
 import (
 	"math"
-
-	"github.com/jfigge/guilib/graphics/components"
 )
 
 type Matrix4X4 [4][4]float64
 
-func (m *Matrix4X4) New() *Matrix4X4 {
+func (m *Matrix4X4) NewInstance() *Matrix4X4 {
 	return &Matrix4X4{
 		{m[0][0], m[0][1], m[0][2], m[0][3]},
 		{m[1][0], m[1][1], m[1][2], m[1][3]},
@@ -162,30 +160,30 @@ func RotateZ(angle float64) *Matrix4X4 {
 	}
 }
 
-func PointAt(pos, target, up *components.Vector) *Matrix4X4 {
+func PointAt(pos, target, up *Vector) *Matrix4X4 {
 	newForward := target.Subtract(pos).Normalize()
 	newUp := up.Subtract(newForward.Multiply(up.DotProduct(newForward))).Normalize()
 	newRight := newUp.CrossProduct(newForward)
 	return &Matrix4X4{
-		{newRight.X(), newRight.Y(), newRight.Z(), 0},
-		{newUp.X(), newUp.Y(), newUp.Z(), 0},
-		{newForward.X(), newForward.Y(), newForward.Z(), 0},
-		{pos.X(), pos.Y(), pos.Z(), 1},
+		{newRight.x, newRight.y, newRight.z, 0},
+		{newUp.x, newUp.y, newUp.z, 0},
+		{newForward.x, newForward.y, newForward.z, 0},
+		{pos.x, pos.y, pos.z, 1},
 	}
 }
 
-func LookAtMatrix(pos, target, up *components.Vector) *Matrix4X4 {
+func LookAtMatrix(pos, target, up *Vector) *Matrix4X4 {
 	newForward := target.Subtract(pos).Normalize()
 	newUp := up.Subtract(newForward.Multiply(up.DotProduct(newForward))).Normalize()
 	newRight := newUp.CrossProduct(newForward)
 	return &Matrix4X4{
-		{newRight.X(), newUp.X(), newForward.X(), 0},
-		{newRight.Y(), newUp.Y(), newForward.Y(), 0},
-		{newRight.Z(), newUp.Z(), newForward.Z(), 0},
+		{newRight.x, newUp.x, newForward.x, 0},
+		{newRight.y, newUp.y, newForward.y, 0},
+		{newRight.z, newUp.z, newForward.z, 0},
 		{
-			-(pos.X()*newRight.X() + pos.Y()*newRight.Y() + pos.Z()*newRight.Z()),
-			-(pos.X()*newUp.X() + pos.Y()*newUp.Y() + pos.Z()*newUp.Z()),
-			-(pos.X()*newForward.X() + pos.Y()*newForward.Y() + pos.Z()*newForward.Y()),
+			-(pos.x*newRight.x + pos.y*newRight.y + pos.z*newRight.z),
+			-(pos.x*newUp.x + pos.y*newUp.y + pos.z*newUp.z),
+			-(pos.x*newForward.x + pos.y*newForward.y + pos.z*newForward.y),
 			1,
 		},
 	}

@@ -2,13 +2,12 @@
  * Copyright (C) 2023 by Jason Figge
  */
 
-package components
+package geometry
 
 import (
 	"fmt"
 	"math"
 
-	"github.com/jfigge/guilib/graphics/matrix"
 	"github.com/veandco/go-sdl2/sdl"
 )
 
@@ -19,7 +18,7 @@ type Vector struct {
 	w float64
 }
 
-func New(x, y, z float64) *Vector {
+func NewVector(x, y, z float64) *Vector {
 	return &Vector{x: x, y: y, z: z, w: 1}
 }
 
@@ -93,34 +92,13 @@ func (v *Vector) Divide(l float64) *Vector {
 	}
 }
 
-func (v *Vector) MatrixMultiply(matrix *matrix.Matrix4X4) *Vector {
+func (v *Vector) MatrixMultiply(matrix *Matrix4X4) *Vector {
 	return &Vector{
 		x: v.x*matrix[0][0] + v.y*matrix[0][1] + v.z*matrix[0][2] + v.w*matrix[0][3],
 		y: v.x*matrix[1][0] + v.y*matrix[1][1] + v.z*matrix[1][2] + v.w*matrix[1][3],
 		z: v.x*matrix[2][0] + v.y*matrix[2][1] + v.z*matrix[2][2] + v.w*matrix[2][3],
 		w: v.x*matrix[3][0] + v.y*matrix[3][1] + v.z*matrix[3][2] + v.w*matrix[3][3],
 	}
-}
-
-func (v *Vector) X() float64 {
-	return v.x
-}
-
-func (v *Vector) Y() float64 {
-	return v.y
-}
-
-func (v *Vector) Z() float64 {
-	return v.z
-}
-
-func (v *Vector) W() float64 {
-	return v.w
-}
-
-func (v *Vector) SetZ(z float64) float64 {
-	v.z = z
-	return v.z
 }
 
 func (v *Vector) Point() *sdl.FPoint {

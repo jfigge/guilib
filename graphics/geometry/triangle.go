@@ -2,13 +2,12 @@
  * Copyright (C) 2023 by Jason Figge
  */
 
-package components
+package geometry
 
 import (
 	"fmt"
 	"math"
 
-	"github.com/jfigge/guilib/graphics/matrix"
 	"github.com/veandco/go-sdl2/sdl"
 )
 
@@ -20,9 +19,9 @@ type Triangle struct {
 	color    uint32
 }
 
-var origin = New(0, 0, 1)
+var origin = &Vector{x: 0, y: 0, z: 1}
 
-func (t *Triangle) NewInstane() *Triangle {
+func (t *Triangle) NewInstance() *Triangle {
 	return &Triangle{
 		vs:       [3]*Vector{t.vs[0].NewInstance(), t.vs[1].NewInstance(), t.vs[2].NewInstance()},
 		normal:   t.normal.NewInstance(),
@@ -33,9 +32,9 @@ func (t *Triangle) NewInstane() *Triangle {
 }
 
 func (t *Triangle) Normal(screen *Vector) *Triangle {
-	t.vs[0].SetZ(t.vs[0].W())
-	t.vs[1].SetZ(t.vs[1].W())
-	t.vs[2].SetZ(t.vs[2].W())
+	t.vs[0].z = t.vs[0].w
+	t.vs[1].z = t.vs[1].w
+	t.vs[2].z = t.vs[2].w
 	v1 := t.vs[1].Subtract(t.vs[0])
 	v2 := t.vs[2].Subtract(t.vs[0])
 	t.normal = v1.CrossProduct(v2).Normalize()
@@ -45,20 +44,20 @@ func (t *Triangle) Normal(screen *Vector) *Triangle {
 }
 
 func (t *Triangle) CompareX(t2 *Triangle) int {
-	x1 := (t.vs[0].X() + t.vs[1].X() + t.vs[2].X()) / 3
-	x2 := (t2.vs[0].X() + t2.vs[1].X() + t2.vs[2].X()) / 3
+	x1 := (t.vs[0].x + t.vs[1].x + t.vs[2].x) / 3
+	x2 := (t2.vs[0].x + t2.vs[1].x + t2.vs[2].x) / 3
 	return int(x1 - x2)
 }
 
 func (t *Triangle) CompareY(t2 *Triangle) int {
-	y1 := (t.vs[0].Y() + t.vs[1].Y() + t.vs[2].Y()) / 3
-	y2 := (t2.vs[0].Y() + t2.vs[1].Y() + t2.vs[2].Y()) / 3
+	y1 := (t.vs[0].y + t.vs[1].y + t.vs[2].y) / 3
+	y2 := (t2.vs[0].y + t2.vs[1].y + t2.vs[2].y) / 3
 	return int(y1 - y2)
 }
 
 func (t *Triangle) CompareZ(t2 *Triangle) int {
-	z1 := (t.vs[0].Z() + t.vs[1].Z() + t.vs[2].Z()) / 3
-	z2 := (t2.vs[0].Z() + t2.vs[1].Z() + t2.vs[2].Z()) / 3
+	z1 := (t.vs[0].z + t.vs[1].z + t.vs[2].z) / 3
+	z2 := (t2.vs[0].z + t2.vs[1].z + t2.vs[2].z) / 3
 	return int(z1 - z2)
 }
 
@@ -84,7 +83,7 @@ func (t *Triangle) ShadedColor() sdl.Color {
 	}
 }
 
-func (t *Triangle) Multiply(matrix *matrix.Matrix4X4) *Triangle {
+func (t *Triangle) Multiply(matrix *Matrix4X4) *Triangle {
 	t1 := &Triangle{
 		vs: [3]*Vector{
 			t.vs[0].MatrixMultiply(matrix),
@@ -99,7 +98,7 @@ func (t *Triangle) Multiply(matrix *matrix.Matrix4X4) *Triangle {
 	return t1
 }
 
-func (t *Triangle) Project(projection *matrix.Matrix4X4) *Triangle {
+func (t *Triangle) Project(projection *Matrix4X4) *Triangle {
 	t1 := &Triangle{
 		vs: [3]*Vector{
 			t.vs[0].MatrixMultiply(projection),
@@ -111,9 +110,9 @@ func (t *Triangle) Project(projection *matrix.Matrix4X4) *Triangle {
 		normalI:  t.normalI,
 		color:    t.color,
 	}
-	t1.vs[0] = t1.vs[0].Divide(t1.vs[0].W())
-	t1.vs[1] = t1.vs[1].Divide(t1.vs[1].W())
-	t1.vs[2] = t1.vs[2].Divide(t1.vs[2].W())
+	t1.vs[0] = t1.vs[0].Divide(t1.vs[0].w)
+	t1.vs[1] = t1.vs[1].Divide(t1.vs[1].w)
+	t1.vs[2] = t1.vs[2].Divide(t1.vs[2].w)
 	return t1
 }
 
@@ -159,7 +158,7 @@ func (t *Triangle) A() uint8 {
 	return uint8(t.color)
 }
 
-func (t *Triangle) applyMatrix(m *matrix.Matrix4X4) {
+func (t *Triangle) applyMatrix(m *Matrix4X4) {
 	t.vs[0] = t.vs[0].MatrixMultiply(m)
 	t.vs[1] = t.vs[1].MatrixMultiply(m)
 	t.vs[2] = t.vs[2].MatrixMultiply(m)
@@ -170,7 +169,7 @@ func (t *Triangle) IsVisible() bool {
 }
 
 func (t *Triangle) TranslateXYZ(x, y, z float64) *Triangle {
-	offset := New(x, y, z)
+	offset := &Vector{x: x, y: y, z: z}
 	t1 := &Triangle{
 		vs: [3]*Vector{
 			t.vs[0].Add(offset),
