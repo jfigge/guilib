@@ -13,7 +13,7 @@ import (
 type GUIHandler interface {
 	Init(canvas *Canvas)
 	Events(event sdl.Event) bool
-	OnUpdate()
+	OnUpdate(elapsedTime float64)
 	OnDraw(renderer *sdl.Renderer)
 	Destroy()
 }
@@ -47,7 +47,7 @@ func (b *BaseHandler) Events(event sdl.Event) bool {
 	return false
 }
 
-func (b *BaseHandler) OnUpdate() {
+func (b *BaseHandler) OnUpdate(elapsedTime float64) {
 }
 
 func (b *BaseHandler) OnDraw(renderer *sdl.Renderer) {

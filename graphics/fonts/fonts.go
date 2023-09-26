@@ -47,24 +47,25 @@ func Fonts() []Font {
 	return fonts
 }
 
-func LoadFonts(renderer *sdl.Renderer) {
+func LoadFonts(renderer *sdl.Renderer) error {
 	err := ttf.Init()
 	if err != nil {
-		panic(fmt.Sprintf("failed to initialize fonts package: %v", err))
+		return fmt.Errorf("failed to initialize fonts package: %v", err)
 	}
 
 	var dir string
 	dir, err = os.Getwd()
 	if err != nil {
-		panic(fmt.Errorf("unable to get working directory: %w", err))
+		return fmt.Errorf("unable to get working directory: %w", err)
 	}
 	base := filepath.Join(dir, "resources", "fonts")
 	for i, src := range fontSrc {
-		ttfFonts[i], err = ttf.OpenFont(filepath.Join(base, fontSrc[i]), 15)
+		ttfFonts[i], err = ttf.OpenFont(filepath.Join(base, fontSrc[i]), 12)
 		if err != nil {
-			panic(fmt.Sprintf("failed to load font [%s]: %v", src, err))
+			return fmt.Errorf("failed to load font [%s]: %v", src, err)
 		}
 	}
+	return nil
 }
 
 func FreeFonts() {
@@ -85,7 +86,7 @@ func (f Font) Size(text string) (int, int, error) {
 	return ttfFonts[f].SizeUTF8(text)
 }
 
-func (f Font) Writer(renderer *sdl.Renderer, text string, fgColor int32) (*Writer, error) {
+func (f Font) Writer(renderer *sdl.Renderer, text string, fgColor uint32) (*Writer, error) {
 	surface, err := ttfFonts[f].RenderUTF8Blended(text, sdl.Color(color.RGBA{
 		R: uint8(fgColor >> 24),
 		G: uint8(fgColor >> 16),
@@ -113,5 +114,11 @@ func (f Font) Writer(renderer *sdl.Renderer, text string, fgColor int32) (*Write
 		srcRect:  srcRect,
 		destRect: destRect,
 	}, nil
+}
 
+func (f Font) PrintfAt(renderer *sdl.Renderer, x, y int32, fgColor uint32, format string, a ...any) {
+	text := fmt.Sprintf(format, a...)
+	writer, _ := f.Writer(renderer, text, fgColor)
+	writer.Render(x, y)
+	writer.Close()
 }

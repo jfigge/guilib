@@ -4,6 +4,7 @@
 
 package graphics
 
+import "C"
 import (
 	"fmt"
 	"runtime"
@@ -34,27 +35,29 @@ type Canvas struct {
 }
 
 type config struct {
-	windowX       int32
-	windowY       int32
-	windowFlags   uint32
-	framerate     int
-	rendererFlags uint32
+	windowX           int32
+	windowY           int32
+	windowFlags       uint32
+	framerate         int
+	rendererFlags     uint32
+	rendererBlendMode sdl.BlendMode
 }
 
 type ConfigOption func(c *config)
 
-func Open(title string, width, height int32, handler GUIHandler, options ...ConfigOption) {
+func Open(title string, width, height int32, scale float64, handler GUIHandler, options ...ConfigOption) {
 	sdl.SetHint(sdl.HINT_RENDER_SCALE_QUALITY, "0")
 	if err := sdl.Init(sdl.INIT_EVERYTHING); err != nil {
 		panic(fmt.Errorf("failed to started sdl: %w", err))
 	}
 
 	cfg := &config{
-		windowX:       sdl.WINDOWPOS_UNDEFINED,
-		windowY:       sdl.WINDOWPOS_UNDEFINED,
-		windowFlags:   sdl.WINDOW_OPENGL,
-		framerate:     60,
-		rendererFlags: sdl.RENDERER_ACCELERATED, //|sdl.RENDERER_PRESENTVSYNC
+		windowX:           sdl.WINDOWPOS_UNDEFINED,
+		windowY:           sdl.WINDOWPOS_UNDEFINED,
+		windowFlags:       sdl.WINDOW_OPENGL,
+		framerate:         60,
+		rendererFlags:     sdl.RENDERER_ACCELERATED, //|sdl.RENDERER_PRESENTVSYNC
+		rendererBlendMode: sdl.BLENDMODE_BLEND,
 	}
 	for _, option := range options {
 		option(cfg)
@@ -64,7 +67,7 @@ func Open(title string, width, height int32, handler GUIHandler, options ...Conf
 		title,
 		cfg.windowX,
 		cfg.windowY,
-		width, height,
+		int32(float64(width)*scale), int32(float64(height)*scale),
 		cfg.windowFlags,
 	)
 	if err != nil {
@@ -76,11 +79,13 @@ func Open(title string, width, height int32, handler GUIHandler, options ...Conf
 	}
 
 	c.renderer, err = sdl.CreateRenderer(window, -1, cfg.rendererFlags)
+	c.renderer.SetLogicalSize(width, height)
+	c.renderer.SetDrawBlendMode(cfg.rendererBlendMode)
+
 	if err != nil {
 		panic(fmt.Errorf("failed to create renderer: %w", err))
 	}
 	c.handler = handler
-	c.handler.Init(c)
 	c.start(cfg.framerate)
 }
 
@@ -132,7 +137,9 @@ func (c *Canvas) start(framerate int) {
 func (c *Canvas) gameLoop(framerate int) {
 	c.glwg.Add(1)
 	fr := time.Second / time.Duration(framerate)
+	var elapsedTime time.Time
 	go func() {
+		elapsedTime = time.Now()
 		defer func() {
 			fmt.Println("Game loop Exited")
 			c.glwg.Done()
@@ -150,7 +157,8 @@ func (c *Canvas) gameLoop(framerate int) {
 					c.lock.Lock()
 					defer c.lock.Unlock()
 					// Update state
-					c.handler.OnUpdate()
+					c.handler.OnUpdate(time.Now().Sub(elapsedTime).Seconds())
+					elapsedTime = time.Now()
 
 					// Handle draw canvas
 					c.handler.OnDraw(c.renderer)
@@ -218,6 +226,17 @@ func RendererFlags(flags uint32) ConfigOption {
 			sdl.RENDERER_ACCELERATED &
 			sdl.RENDERER_PRESENTVSYNC &
 			sdl.RENDERER_TARGETTEXTURE
+	}
+}
+
+func RendererBlendMode(blendMode sdl.BlendMode) ConfigOption {
+	return func(c *config) {
+		c.rendererBlendMode = blendMode &
+			sdl.BLENDMODE_NONE & // no blending
+			sdl.BLENDMODE_BLEND & // alpha blending
+			sdl.BLENDMODE_ADD & // additive blending
+			sdl.BLENDMODE_MOD & // color modulate
+			sdl.BLENDMODE_INVALID
 	}
 }
 
